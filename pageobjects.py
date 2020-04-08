@@ -1,5 +1,7 @@
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import NoSuchElementException
 import time
+import json
 
 
 class PageObject:
@@ -9,6 +11,11 @@ class PageObject:
 
     def get_element(self, xpath):
         return self.driver.find_element_by_xpath(xpath)
+
+    def click_with_js(self, xpath):
+        btn_plan = self.get_element(xpath)
+        self.driver.execute_script("arguments[0].click();", btn_plan)\
+
 
 
 class WelcomePage(PageObject):
@@ -104,10 +111,40 @@ class Variables(PageObject):
         self.__insert_value_for("email")
 
     def save_data(self):
-        self.get_element('//button[@id="submit-cluster"]').click()
+        self.click_with_js('//button[@id="submit-cluster"]')
         time.sleep(1)
         self.get_element('//div[contains(@class, "alert-success")]')
 
     def go_to_plan(self):
-        btn_plan = self.get_element('//a[@href="/plan"]')
-        self.driver.execute_script("arguments[0].click();", btn_plan)
+        self.click_with_js('//main//a[@href="/plan"]')
+
+
+class Plan(PageObject):
+
+    def page_displayed(self):
+        self.get_element(
+            '//a[contains(@class,"btn-primary") and @href="/plan"]')
+        self.get_element(
+            '//a[contains(@class,"disabled") and @href="/deploy"]')
+
+    def click_plan_button(self):
+        time.sleep(5)
+        self.get_element('//main//a[@href="/plan"]').click()
+
+    def wait_plan_to_finish(self):
+        try_count = 120
+        while try_count > 0:
+            current_code = self.get_element('//code').text
+            if current_code:
+                plan = json.loads(current_code)
+                if plan.get('variables'):
+                    break
+            elif self.get_element(
+                    '//div[contains(@class,"alert-danger") and @id="flash"]').is_displayed():
+                raise AssertionError("Plan execution failed")
+            print('Waiting')
+            try_count = try_count - 1
+            time.sleep(5)
+
+    def go_to_deploy(self):
+        self.get_element('//main//a[@href="/deploy"]').click()

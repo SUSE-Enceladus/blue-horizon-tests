@@ -2,7 +2,7 @@ This is tests which meant to cover https://github.com/SUSE-Enceladus/blue-horizo
 
 ##Usage
 
-1. Need to create .properties file with following content
+1. Need to create test.properties file with following content
 
 ```
 [login]
@@ -30,6 +30,7 @@ email=...
 2. Create System Under Test with :
 ```
 # cd  ./terraform
+# terraform init
 # terraform apply -auto-approve -no-color
 ```
 3. Execute as regular pytest

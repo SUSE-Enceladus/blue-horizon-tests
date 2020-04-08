@@ -4,6 +4,7 @@ from pageobjects import WelcomePage
 from pageobjects import SideBar
 from pageobjects import Cluster
 from pageobjects import Variables
+from pageobjects import Plan
 import pytest
 
 
@@ -34,6 +35,7 @@ def test_simpleFlow(login, variables_values, cluster_labels):
     driver = webdriver.Firefox(service_log_path='/tmp/geckodriver.log')
     driver.get(
         "http://{}:{}@{}/".format(login["username"], login["pw"], login["ip"]))
+    driver.implicitly_wait(5)
     driver.maximize_window()
     SideBar(driver).page_displayed()
     WelcomePage(driver).go_to_cluster()
@@ -44,3 +46,8 @@ def test_simpleFlow(login, variables_values, cluster_labels):
     variables.insert_data()
     variables.save_data()
     variables.go_to_plan()
+    plan = Plan(driver)
+    plan.page_displayed()
+    plan.click_plan_button()
+    plan.wait_plan_to_finish()
+    plan.go_to_deploy()

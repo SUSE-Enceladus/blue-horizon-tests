@@ -27,4 +27,9 @@ email=...
 
 
 ```
-2. Execute as regular pytest
+2. Create System Under Test with :
+```
+# cd  ./terraform
+# terraform apply -auto-approve -no-color
+```
+3. Execute as regular pytest

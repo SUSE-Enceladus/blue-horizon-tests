@@ -7,7 +7,7 @@ variable "instance_count" {
 }
 
 variable "name" {
-    default = "openqa-aks-vm"
+    default = "openqa-aks"
 }
 
 variable "type" {

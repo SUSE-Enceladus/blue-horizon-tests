@@ -1,5 +1,3 @@
-from selenium.webdriver.common.action_chains import ActionChains
-from selenium.common.exceptions import NoSuchElementException
 import time
 import json
 
@@ -14,8 +12,7 @@ class PageObject:
 
     def click_with_js(self, xpath):
         btn_plan = self.get_element(xpath)
-        self.driver.execute_script("arguments[0].click();", btn_plan)\
-
+        self.driver.execute_script("arguments[0].click();", btn_plan)
 
 
 class WelcomePage(PageObject):
@@ -40,7 +37,8 @@ class SideBar(PageObject):
 class Cluster(PageObject):
 
     def page_displayed(self):
-        instance_type_xpath_pattern = '//div[@class="instance-type-box"]/small[contains(text(),"{}")]'
+        instance_type_xpath_pattern = '//div[@class="instance-type-box"]/' + \
+            'small[contains(text(),"{}")]'
         self.get_element(instance_type_xpath_pattern.format("Standard_DS3_v2"))
         self.get_element(instance_type_xpath_pattern.format("Standard_DS4_v2"))
         self.get_element(instance_type_xpath_pattern.format("Standard_F4s"))
@@ -140,7 +138,8 @@ class Plan(PageObject):
                 if plan.get('variables'):
                     break
             elif self.get_element(
-                    '//div[contains(@class,"alert-danger") and @id="flash"]').is_displayed():
+                '//div[contains(@class,"alert-danger") and @id="flash"]').\
+                    is_displayed():
                 raise AssertionError("Plan execution failed")
             print('Waiting')
             try_count = try_count - 1

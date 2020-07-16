@@ -7,8 +7,7 @@ from pageobjects import Cluster
 from pageobjects import Variables
 from pageobjects import Plan
 from pageobjects import Deploy
-from qatrfm.environment import TerraformCmd
-from qatrfm.utils.libutils import execute_bash_cmd
+from terraformCmd import TerraformCmd
 import uuid
 import pytest
 import logging
@@ -36,7 +35,8 @@ def cluster_labels():
 def prepare_env(cmdopt):
     global terraform_cmd, variables_values, logger
     logger.info("Start setup")
-    k8s_version = execute_bash_cmd(
+    terraform_cmd = TerraformCmd(logger, os.getcwd()+'/terraform/azure.tf', timeout=1200)
+    k8s_version = terraform_cmd.execute_bash_cmd(
         "az aks get-versions --location $ARM_TEST_LOCATION --output table | awk '{print $1}' | grep  '^[0-9]' | grep -v 'preview' | head -n 1")
     variables_values = {
         'subscription_id': os.environ.get('ARM_SUBSCRIPTION_ID'),
@@ -63,7 +63,7 @@ def prepare_env(cmdopt):
         tf_vars.append('image_id={}'.format(cmdopt["imageid"]))
     if cmdopt["bloburi"]:
         tf_vars.append('bloburi={}'.format(cmdopt["bloburi"]))
-    terraform_cmd = TerraformCmd(os.getcwd()+'/terraform/azure.tf', tf_vars)
+    terraform_cmd.update_tf_vars(tf_vars)
     terraform_cmd.deploy()
     # according to .tf file resource_group name is the same as vm_name
     variables_values['resource_group'] = terraform_cmd.get_output('vm_name')

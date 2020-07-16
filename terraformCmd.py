@@ -104,7 +104,7 @@ class TerraformCmd:
         self.execute_bash_cmd("terraform destroy -input=false -auto-approve {}".format(
             self.tf_vars))
         shutil.rmtree(self.workdir)
-        self.logger.success("Environment clean")
+        self.logger.info("Environment clean")
 
     def get_output(self, variable):
         output = self.execute_bash_cmd("terraform output -json")

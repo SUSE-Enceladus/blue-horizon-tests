@@ -4,3 +4,4 @@ test.properties
 /terraform/.terraform
 terraform.tfstate*
 .venv
+vars.dump

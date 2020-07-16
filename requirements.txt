@@ -1,2 +1,4 @@
 flake8
+re
 pytest-selenium
+git+https://github.com/jlausuch/qatrfm-lib.git

@@ -1,11 +1,15 @@
 import time
+import datetime
 import json
+import re
 
 
 class PageObject:
 
-    def __init__(self, driver):
+    def __init__(self, driver, logger):
+        self.logger = logger
         self.driver = driver
+        self.pause_sec = 5
 
     def get_element(self, xpath):
         return self.driver.find_element_by_xpath(xpath)
@@ -59,14 +63,15 @@ class Variables(PageObject):
 
     input_xpath_template = '//input[@name="variables[{}]"]'
 
-    def __init__(self, driver, values, cluster_labels):
-        super().__init__(driver)
+    def __init__(self, driver, logger, values, cluster_labels):
+        super().__init__(driver, logger)
         self.values = values
         self.cluster_labels = cluster_labels
 
     def __insert_value_for(self, key):
         element = self.get_element(
             Variables.input_xpath_template.format(key))
+        element.clear()
         element.send_keys(self.values[key])
 
     def __insert_public_key(self):
@@ -100,9 +105,10 @@ class Variables(PageObject):
         self.__insert_value_for("client_secret")
         self.__insert_value_for("tenant_id")
         self.__insert_value_for("ssh_username")
+        self.__insert_value_for("k8s_version")
+        self.__insert_value_for("dns_zone_resource_group")
         self.__insert_public_key()
-        self.__insert_value_for("cluster_admin_password")
-        self.__insert_value_for("uaa_admin_client_secret")
+        self.__insert_value_for("admin_password")
         self.__insert_cluster_labels()
         self.__insert_value_for("dns_zone_name")
         self.__insert_value_for("cap_domain")
@@ -114,7 +120,7 @@ class Variables(PageObject):
         self.get_element('//div[contains(@class, "alert-success")]')
 
     def go_to_plan(self):
-        self.click_with_js('//main//a[@href="/plan"]')
+        self.click_with_js('//main//button[@id="next"]')
 
 
 class Plan(PageObject):
@@ -126,24 +132,65 @@ class Plan(PageObject):
             '//a[contains(@class,"disabled") and @href="/deploy"]')
 
     def click_plan_button(self):
-        time.sleep(5)
+        time.sleep(self.pause_sec)
         self.get_element('//main//a[@href="/plan"]').click()
 
     def wait_plan_to_finish(self):
         try_count = 120
+        plan_passed = False
         while try_count > 0:
             current_code = self.get_element('//code').text
             if current_code:
                 plan = json.loads(current_code)
                 if plan.get('variables'):
+                    self.logger.info('Plan completed')
+                    plan_passed = True
                     break
             elif self.get_element(
                 '//div[contains(@class,"alert-danger") and @id="flash"]').\
                     is_displayed():
                 raise AssertionError("Plan execution failed")
-            print('Waiting')
+            self.logger.info('Waiting for plan. {} before timeout'.format(
+                datetime.timedelta(seconds=try_count * self.pause_sec)))
             try_count = try_count - 1
-            time.sleep(5)
+            time.sleep(self.pause_sec)
+        assert plan_passed, "Plan timed out!"
 
     def go_to_deploy(self):
-        self.get_element('//main//a[@href="/deploy"]').click()
+        self.click_with_js('//main//a[@href="/deploy"]')
+
+
+class Deploy(PageObject):
+
+    def page_displayed(self):
+        time.sleep(10)
+        self.get_element(
+            '//a[contains(@class,"btn-primary") and @href="/deploy"]')
+        self.get_element(
+            '//a[contains(@class,"disabled") and @href="/wrapup"]')
+
+    def click_deploy_button(self):
+        self.get_element(
+            '//a[contains(@class,"btn-primary") and @href="/deploy"]').click()
+
+    def go_to_next_steps(self):
+        self.click_with_js('//main//a[@href="/wrapup"]')
+
+    def wait_deploy_to_finish(self):
+        try_count = 400
+        deployed = False
+        while try_count > 0:
+            current_code = self.get_element('//code[@id="output"]').text
+            if current_code and re.findall('Apply complete! Resources: \d{1,2} added, \d{1,2} changed, \d{1,2} destroyed',current_code):
+                self.logger.info('Apply completed')
+                deployed = True
+                break
+            elif self.get_element(
+                '//div[contains(@class,"alert-danger") and @id="flash"]').\
+                    is_displayed():
+                raise AssertionError("Plan execution failed")
+            self.logger.info('Waiting for deploy. {} left before timeout'.format(
+                datetime.timedelta(seconds=try_count * self.pause_sec)))
+            try_count = try_count - 1
+            time.sleep(self.pause_sec)
+        assert deployed, "Deploy timed out"

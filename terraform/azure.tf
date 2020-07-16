@@ -1,5 +1,5 @@
 provider "azurerm" {
-   version = "<= 1.33"
+    features {}
 }
 
 variable "instance_count" {
@@ -18,9 +18,17 @@ variable "region" {
     default = "westeurope"
 }
 
+variable "image_id" {
+    default = ""
+}
+
 variable "tags" {
     type = map(string)
     default = {}
+}
+
+variable "bloburi" {
+    default = "https://openqa.blob.core.windows.net/sle-images/"
 }
 
 variable "ssh_file" {
@@ -58,7 +66,7 @@ resource "azurerm_subnet" "openqa-subnet" {
     name                 = "${azurerm_resource_group.openqa-group.name}-subnet"
     resource_group_name  = azurerm_resource_group.openqa-group.name
     virtual_network_name = azurerm_virtual_network.openqa-network.name
-    address_prefix       = "10.0.1.0/24"
+    address_prefixes       = ["10.0.1.0/24"]
 }
 
 resource "azurerm_public_ip" "openqa-publicip" {
@@ -99,11 +107,15 @@ resource "azurerm_network_security_group" "openqa-nsg" {
     }
 }
 
+resource "azurerm_subnet_network_security_group_association" "openqa-net-sec-association" {
+    subnet_id                   = azurerm_subnet.openqa-subnet.id
+    network_security_group_id   = azurerm_network_security_group.openqa-nsg.id
+}
+
 resource "azurerm_network_interface" "openqa-nic" {
     name                      = "${var.name}-${element(random_id.service.*.hex, count.index)}-nic"
     location                  = var.region
     resource_group_name       = azurerm_resource_group.openqa-group.name
-    network_security_group_id = azurerm_network_security_group.openqa-nsg.id
     count                     = var.instance_count
 
     ip_configuration {
@@ -114,9 +126,18 @@ resource "azurerm_network_interface" "openqa-nic" {
     }
 }
 
-resource "azurerm_dns_zone" "openqa-dns-zone" {
-  name                = "openqa.com"
-  resource_group_name = azurerm_resource_group.openqa-group.name
+resource "azurerm_image" "image" {
+    name                      = "${azurerm_resource_group.openqa-group.name}-disk1"
+    location                  = var.region
+    resource_group_name       = azurerm_resource_group.openqa-group.name
+    count = var.image_id != "" ? 1 : 0
+
+    os_disk {
+        os_type = "Linux"
+        os_state = "Generalized"
+        blob_uri = "${var.bloburi}${var.image_id}"
+        size_gb = 30
+    }
 }
 
 resource "azurerm_virtual_machine" "openqa-vm" {
@@ -128,10 +149,17 @@ resource "azurerm_virtual_machine" "openqa-vm" {
     count                 = var.instance_count
 
     storage_image_reference {
-        publisher = "SUSE"
-        offer     = "cap-deploy-byos"
-        sku       = "gen1"
-        version   = "latest"
+        /*
+        Image may come from MS official repo or from custom account blob storage
+        in first case Terraform variable "image_id" will be empty so we will
+        leave storage_image_reference.id empty but will fill all other variables.
+        In second case it will be vice versa
+        */
+        id = var.image_id != "" ? azurerm_image.image.0.id : ""
+        publisher = var.image_id != "" ? "" : "SUSE"
+        offer     = var.image_id != "" ? "" : "cap-deploy-byos"
+        sku       = var.image_id != "" ? "" : "gen1"
+        version   = var.image_id != "" ? "" : "latest"
     }
 
     storage_os_disk {

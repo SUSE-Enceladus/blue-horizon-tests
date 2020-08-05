@@ -23,22 +23,21 @@ urllibLogger.setLevel(logging.INFO)
 
 @pytest.fixture
 def prepare_env(cmdopt, logger, ssh_key_file):
-    logger.info("Prepare for AKS testing")
+    logger.info("Prepare for EKS testing")
     variables_values = {
-        'subscription_id': os.environ.get('ARM_SUBSCRIPTION_ID'),
-        'location': os.environ.get('ARM_TEST_LOCATION'),
-        'client_id': os.environ.get('ARM_CLIENT_ID'),
-        'client_secret': os.environ.get('ARM_CLIENT_SECRET'),
-        'tenant_id': os.environ.get('ARM_TENANT_ID'),
         'ssh_username': 'openqa',
-        'dns_zone_name': 'anton.bear454.codes',
+        'hosted_zone_name': 'antonec2.bear454.codes',
         'email': 'akstest@suse.com',
-        'dns_zone_resource_group': 'AKS-testing-for-persistent-dns-zone',
         'no_cleanup': cmdopt['no_cleanup'],
-        'skip_terraform': cmdopt['skip_terraform'],
-        'cap_domain': "aks{}.anton.bear454.codes".format(str(uuid.uuid4())[:3]),
+        'cap_domain': "eks{}.antonec.bear454.codes".format(str(uuid.uuid4())[:3]),
         'admin_password': str(uuid.uuid4()),
-        'ssh_public_key': ssh_key_file
+        'k8s_version': '1.15',
+        'skip_terraform': cmdopt['skip_terraform'],
+        'pw': os.environ.get('AWS_OWNER'),
+        'region': os.environ.get('AWS_DEFAULT_REGION'),
+        'access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
+        'secret_access_key': os.environ.get('AWS_SECRET_ACCESS_KEY'),
+        'keypair_name': os.environ.get('AWS_KEYPAIR_NAME')
     }
     if cmdopt["skip_terraform"]:
         with open("vars.dump", "rb") as f:
@@ -46,23 +45,18 @@ def prepare_env(cmdopt, logger, ssh_key_file):
             variables_values.update(from_dump)
     else:
         terraform_cmd = TerraformCmd(
-            logger, os.getcwd()+'/terraform/azure.tf', timeout=1200)
-        variables_values["k8s_version"] = terraform_cmd.execute_bash_cmd(
-            "az aks get-versions --location $ARM_TEST_LOCATION --output table | awk '{print $1}' | grep  '^[0-9]' | grep -v 'preview' | head -n 1")
+            logger, os.getcwd()+'/terraform/ec2.tf', timeout=1200)
         logger.info("Defining variables {}".format(variables_values))
-        tf_vars = ['ssh_file=' + variables_values['ssh_public_key']]
+        tf_vars = ['ssh_file=' + ssh_key_file]
         if cmdopt["image_id"]:
             tf_vars.append('image_id={}'.format(cmdopt["image_id"]))
-        if cmdopt["blob_uri"]:
-            tf_vars.append('blob_uri={}'.format(cmdopt["blob_uri"]))
         terraform_cmd.update_tf_vars(tf_vars)
         terraform_cmd.deploy()
         # according to .tf file resource_group name is the same as vm_name
-        variables_values['resource_group'] = terraform_cmd.get_output(
-            'vm_name')
+        variables_values["username"] = terraform_cmd.get_output('vm_name')
         variables_values['ip'] = terraform_cmd.get_output('public_ip')
-        logger.info("{} added as variables_values['resource_group']".format(
-            variables_values['resource_group']))
+        logger.info("{} added as variables_values['username']".format(
+            variables_values['username']))
         logger.info("{} added as variables_values['ip']".format(
             variables_values['ip']))
     yield variables_values
@@ -70,15 +64,16 @@ def prepare_env(cmdopt, logger, ssh_key_file):
         logger.info(
             "--no_cleanup option was specified so leaving environment. And saving details to reuse it")
         for_dump = {
-            'k8s_version': variables_values['k8s_version'],
-            'resource_group': variables_values['resource_group'],
+            'username': variables_values['username'],
             'ip': variables_values['ip']
         }
         with open("vars.dump", "wb") as f:
             pickle.dump(for_dump, f)
     elif not cmdopt["skip_terraform"]:
-        logger.info("Teardown after test")
-        terraform_cmd.clean()
+        logger.info("No op for now , read TODO in source code")
+        #TODO implement k8s cleanup before uncomment this
+        #logger.info("Teardown after test")
+        #terraform_cmd.clean()
 
 
 def test_simpleFlow(prepare_env, cluster_labels, logger):
@@ -91,7 +86,7 @@ def test_simpleFlow(prepare_env, cluster_labels, logger):
     if not prepare_env['skip_terraform']:
         time.sleep(60)
     final_url = "http://{}:{}@{}/".format(
-        prepare_env["resource_group"], prepare_env["subscription_id"], prepare_env["ip"])
+        prepare_env["username"], prepare_env["pw"], prepare_env["ip"])
     logger.info("Navigating to %s", final_url)
     driver.get(final_url)
     driver.implicitly_wait(5)
@@ -99,10 +94,10 @@ def test_simpleFlow(prepare_env, cluster_labels, logger):
     SideBar(driver, logger).page_displayed()
     WelcomePage(driver, logger).go_to_cluster(prepare_env['skip_terraform'])
     cluster = Cluster(driver, logger)
-    cluster.page_displayed('aks')
+    cluster.page_displayed('eks')
     cluster.go_to_variables()
     variables = Variables(driver, logger, prepare_env, cluster_labels)
-    variables.insert_data('aks')
+    variables.insert_data('eks')
     variables.save_data()
     variables.go_to_plan()
     plan = Plan(driver, logger)

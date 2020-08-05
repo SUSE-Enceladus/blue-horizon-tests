@@ -27,7 +27,7 @@ variable "tags" {
     default = {}
 }
 
-variable "bloburi" {
+variable "blob_uri" {
     default = "https://openqa.blob.core.windows.net/sle-images/"
 }
 
@@ -135,7 +135,7 @@ resource "azurerm_image" "image" {
     os_disk {
         os_type = "Linux"
         os_state = "Generalized"
-        blob_uri = "${var.bloburi}${var.image_id}"
+        blob_uri = "${var.blob_uri}${var.image_id}"
         size_gb = 30
     }
 }

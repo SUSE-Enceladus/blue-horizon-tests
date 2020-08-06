@@ -31,7 +31,6 @@ def prepare_env(cmdopt, logger, ssh_key_file):
         'no_cleanup': cmdopt['no_cleanup'],
         'cap_domain': "eks{}.antonec.bear454.codes".format(str(uuid.uuid4())[:3]),
         'admin_password': str(uuid.uuid4()),
-        'k8s_version': '1.15',
         'skip_terraform': cmdopt['skip_terraform'],
         'pw': os.environ.get('AWS_OWNER'),
         'region': os.environ.get('AWS_DEFAULT_REGION'),

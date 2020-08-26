@@ -23,7 +23,7 @@ urllibLogger.setLevel(logging.INFO)
 
 
 @pytest.fixture
-def prepare_env(cmdopt, ssh_key, logger):
+def prepare_env(cmdopt, logger):
     logger.info("Prepare for GKE testing")
     creds = open(os.environ.get('GCE_SERVICE_ACCOUNT')).read()
     domain = (
@@ -42,6 +42,8 @@ def prepare_env(cmdopt, ssh_key, logger):
         'admin_password': str(uuid.uuid4()),
         'cap_domain': domain,
         'email': email,
+        'skip_terraform': cmdopt['skip_terraform'],
+        'no_cleanup': cmdopt['no_cleanup'],
     }
     if cmdopt["skip_terraform"]:
         logger.info('skipping terraform')
@@ -52,6 +54,8 @@ def prepare_env(cmdopt, ssh_key, logger):
         terraform_cmd = TerraformCmd(
             logger, os.getcwd()+'/terraform/gce.tf', timeout=1200)
         logger.info("Defining variables {}".format(variables_values))
+        tf_vars = ['google_credentials_file=' + os.environ.get('GCE_SERVICE_ACCOUNT')]
+        terraform_cmd.update_tf_vars(tf_vars)
         terraform_cmd.deploy()
         variables_values['vm_name'] = terraform_cmd.get_output(
             'vm_name')
@@ -101,14 +105,14 @@ def test_simpleFlow(prepare_env, cluster_labels, logger):
     SideBar(driver, logger).page_displayed()
     WelcomePage(driver, logger).go_to_cluster(prepare_env['skip_terraform'])
     cluster = Cluster(driver, logger)
-    cluster.page_displayed()
+    cluster.page_displayed('gke')
     cluster.go_to_variables()
     variables = Variables(driver, logger, prepare_env, cluster_labels)
-    variables.insert_data()
+    variables.insert_data('gke')
     variables.save_data()
     variables.go_to_plan()
     plan = Plan(driver, logger)
-    plan.page_displayed()
+    plan.page_displayed(prepare_env['skip_terraform'])
     plan.click_plan_button()
     plan.wait_plan_to_finish()
     plan.go_to_deploy()

@@ -4,7 +4,7 @@ variable "google_credentials_file" {
 }
 
 variable "google_project" {
-    default = "my-project-id"  # FIXME I have no clue what your projects are
+    default = "suse-sle-qa"
     description = "GCP project to run VM in"
 }
 
@@ -29,7 +29,7 @@ variable "instance_count" {
 }
 
 variable "image_family" {
-    default = "sles-deploy-cap-byos"
+    default = "cap-deploy-testing"
     description = "Image family; for finding current image without explicit version"
 }
 

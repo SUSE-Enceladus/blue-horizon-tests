@@ -77,7 +77,7 @@ class Cluster(PageObject):
     def page_displayed(self, cloud_provider):
         instance_type_xpath_pattern = '//div[@class="instance-type-box"]/' + \
             'small[contains(text(),"{}")]'
-        if cloud_provider == "aks":
+        if cloud_provider == 'aks':
             self.get_element(
                 instance_type_xpath_pattern.format("Standard_DS3_v2"))
             self.get_element(
@@ -97,6 +97,11 @@ class Cluster(PageObject):
             self.get_element(instance_type_xpath_pattern.format("r3.xlarge"))
             self.get_element(instance_type_xpath_pattern.format("i3.xlarge"))
             self.get_element(instance_type_xpath_pattern.format("d2.xlarge"))
+        elif cloud_provider == 'gke':
+            self.get_element(instance_type_xpath_pattern.format("n1-standard-4"))
+            self.get_element(instance_type_xpath_pattern.format("n1-standard-8"))
+            self.get_element(instance_type_xpath_pattern.format("n1-highmem-4"))
+            self.get_element(instance_type_xpath_pattern.format("n1-highmem-8"))
         instance_cnt = self.get_element('//input[@id="count-display"]')
         assert instance_cnt.get_attribute('value') == "3"
 
@@ -165,6 +170,11 @@ class Variables(PageObject):
             self.__insert_value_for("secret_access_key")
             self.__insert_value_for("keypair_name")
             self.__insert_value_for("hosted_zone_name")
+        elif cloud_provider == 'gke':
+            self.__insert_value_for("project")
+            self.__insert_value_for("location")
+            self.__insert_value_for("credentials_json")
+            self.__insert_value_for("dns_credentials_json")
         self.__insert_value_for("admin_password")
         self.__insert_cluster_labels()
         self.__insert_value_for("cap_domain")

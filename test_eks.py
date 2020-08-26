@@ -24,12 +24,13 @@ urllibLogger.setLevel(logging.INFO)
 @pytest.fixture
 def prepare_env(cmdopt, logger, ssh_key_file):
     logger.info("Prepare for EKS testing")
+    hosted_zone_name = 'antonec2.bear454.codes'
     variables_values = {
         'ssh_username': 'openqa',
-        'hosted_zone_name': 'antonec2.bear454.codes',
+        'hosted_zone_name': hosted_zone_name,
         'email': 'akstest@suse.com',
         'no_cleanup': cmdopt['no_cleanup'],
-        'cap_domain': "eks{}.antonec.bear454.codes".format(str(uuid.uuid4())[:3]),
+        'cap_domain': "eks{}.{}".format(str(uuid.uuid4())[:3], hosted_zone_name),
         'admin_password': str(uuid.uuid4()),
         'skip_terraform': cmdopt['skip_terraform'],
         'pw': os.environ.get('AWS_OWNER'),
@@ -70,9 +71,9 @@ def prepare_env(cmdopt, logger, ssh_key_file):
             pickle.dump(for_dump, f)
     elif not cmdopt["skip_terraform"]:
         logger.info("No op for now , read TODO in source code")
-        #TODO implement k8s cleanup before uncomment this
+        # TODO implement k8s cleanup before uncomment this
         #logger.info("Teardown after test")
-        #terraform_cmd.clean()
+        # terraform_cmd.clean()
 
 
 def test_simpleFlow(prepare_env, cluster_labels, logger):

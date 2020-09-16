@@ -79,13 +79,11 @@ resource "google_compute_instance" "openqa-vm" {
 
     tags = ["http-server"]
 
-    labels = merge({
-        openqa_created_by = var.name
-        # Error: Error creating instance: googleapi: Error 400: Invalid value for field 'resource.labels': ''. Label value '2020-07-31T19:20:20Z' violates format constraints. The value can only contain lowercase letters, numeric characters, underscores and dashes. The value can be at most 63 characters long. International characters are allowed., invalid
-        # openqa_created_date = "${timestamp()}"
-        openqa_created_id = "${element(random_id.service.*.hex, count.index)}"
-        asmorodskyi = true
-    }, var.tags)
+    metadata = merge({
+            openqa_created_by = "blue-horizon"
+            openqa_created_date = "${timestamp()}"
+            openqa_created_id = "${element(random_id.service.*.hex, count.index)}"
+        }, var.tags)
 }
 
 output "vm_name" {

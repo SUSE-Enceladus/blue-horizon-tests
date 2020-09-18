@@ -116,10 +116,9 @@ class Variables(PageObject):
 
     input_xpath_template = '//input[@name="variables[{}]"]'
 
-    def __init__(self, driver, logger, values, cluster_labels):
+    def __init__(self, driver, logger, values):
         super().__init__(driver, logger)
         self.values = values
-        self.cluster_labels = cluster_labels
 
     def __insert_value_for(self, key):
         element = self.get_element(
@@ -136,9 +135,6 @@ class Variables(PageObject):
             element.send_keys(key)
 
     def __insert_cluster_labels(self):
-        for key, value in self.cluster_labels:
-            self.logger.debug(
-                "Inserting cluster label {}={}".format(key, value))
             add_btn = self.get_element(
                 '//button[@id="cluster_labels_add_map"]')
             self.driver.execute_script(
@@ -147,8 +143,8 @@ class Variables(PageObject):
                 '//input[@id="cluster_labels_new_key"]')
             value_input = self.get_element(
                 '//input[@id="cluster_labels_new_value"]')
-            key_input.send_keys(key)
-            value_input.send_keys(value)
+            key_input.send_keys('openqa_created_by')
+            value_input.send_keys('blue_horizon')
             add_btn.click()
 
     def insert_data(self, cloud_provider):

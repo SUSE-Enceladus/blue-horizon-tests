@@ -81,7 +81,7 @@ def prepare_env(cmdopt, logger, ssh_key_file):
         terraform_cmd.clean()
 
 
-def test_simpleFlow(prepare_env, cluster_labels, logger):
+def test_simpleFlow(prepare_env, logger):
     driver = webdriver.Firefox(service_log_path='/tmp/geckodriver.log')
     """
         sometimes terraform reports success some time before blue-horizon
@@ -101,7 +101,7 @@ def test_simpleFlow(prepare_env, cluster_labels, logger):
     cluster = Cluster(driver, logger)
     cluster.page_displayed('aks')
     cluster.go_to_variables()
-    variables = Variables(driver, logger, prepare_env, cluster_labels)
+    variables = Variables(driver, logger, prepare_env)
     variables.insert_data('aks')
     variables.save_data()
     variables.go_to_plan()

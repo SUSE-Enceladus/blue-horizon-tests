@@ -1,7 +1,6 @@
 
 import pytest
 import logzero
-import configparser
 import os
 
 
@@ -32,13 +31,6 @@ def logger():
     return logzero.setup_logger(
         name='bluehorizon', formatter=logzero.LogFormatter(
             fmt='%(color)s%(module)s:%(lineno)d|%(end_color)s %(message)s'))
-
-
-@pytest.fixture
-def cluster_labels():
-    config = configparser.RawConfigParser()
-    config.read('test.properties')
-    return config.items('cluster_labels')
 
 
 @pytest.fixture

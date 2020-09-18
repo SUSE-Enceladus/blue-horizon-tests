@@ -54,7 +54,8 @@ def prepare_env(cmdopt, logger):
         terraform_cmd = TerraformCmd(
             logger, os.getcwd()+'/terraform/gce.tf', timeout=1200)
         logger.info("Defining variables {}".format(variables_values))
-        tf_vars = ['google_credentials_file=' + os.environ.get('GCE_SERVICE_ACCOUNT')]
+        tf_vars = ['google_credentials_file=' +
+                   os.environ.get('GCE_SERVICE_ACCOUNT')]
         terraform_cmd.update_tf_vars(tf_vars)
         terraform_cmd.deploy()
         variables_values['vm_name'] = terraform_cmd.get_output(
@@ -86,7 +87,7 @@ def prepare_env(cmdopt, logger):
         terraform_cmd.clean()
 
 
-def test_simpleFlow(prepare_env, cluster_labels, logger):
+def test_simpleFlow(prepare_env, logger):
     driver = webdriver.Firefox(service_log_path='/tmp/geckodriver.log')
     """
         sometimes terraform reports success some time before blue-horizon
@@ -107,7 +108,7 @@ def test_simpleFlow(prepare_env, cluster_labels, logger):
     cluster = Cluster(driver, logger)
     cluster.page_displayed('gke')
     cluster.go_to_variables()
-    variables = Variables(driver, logger, prepare_env, cluster_labels)
+    variables = Variables(driver, logger, prepare_env)
     variables.insert_data('gke')
     variables.save_data()
     variables.go_to_plan()

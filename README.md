@@ -4,13 +4,7 @@ Currently AKS,EKS, and GKE are supported
 
 ## Usage
 
-1. Need to create test.properties file with following content
-    ```
-    [cluster_labels]
-    openqa_ttl=8000
-    openqa_created_by=openqa
-    ```
-2. Make sure that following environment variables defined :
+1. Make sure that following environment variables defined :
     * Azure
         * `ARM_SUBSCRIPTION_ID`
         * `ARM_TEST_LOCATION`
@@ -30,7 +24,7 @@ Currently AKS,EKS, and GKE are supported
         * `GCE_TEST_LOCATION`
         * `FQDN` (optional)
         * `EMAIL` (optional)
-3. Execute as regular pytest
+2. Execute as regular pytest
 
 Note : running with `pytest -s -v --log-level=DEBUG` will give you some Terraform output describing test environment setup/teardown
 

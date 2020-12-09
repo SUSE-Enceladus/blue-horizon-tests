@@ -12,7 +12,6 @@ from urllib3.connectionpool import log as urllibLogger
 import logging
 import uuid
 import pytest
-import sys
 import time
 import pickle
 
@@ -37,7 +36,9 @@ def prepare_env(cmdopt, logger, ssh_key_file):
         'region': os.environ.get('AWS_DEFAULT_REGION'),
         'access_key_id': os.environ.get('AWS_ACCESS_KEY_ID'),
         'secret_access_key': os.environ.get('AWS_SECRET_ACCESS_KEY'),
-        'keypair_name': os.environ.get('AWS_KEYPAIR_NAME')
+        'keypair_name': os.environ.get('AWS_KEYPAIR_NAME'),
+        'cluster_tag_key': 'openqa_created_by',
+        'cluster_tag_value': 'blue-horizon'
     }
     if cmdopt["skip_terraform"]:
         with open("vars.dump", "rb") as f:

@@ -166,6 +166,8 @@ class Variables(PageObject):
             self.__insert_value_for("secret_access_key")
             self.__insert_value_for("keypair_name")
             self.__insert_value_for("hosted_zone_name")
+            self.__insert_value_for("cluster_tag_key")
+            self.__insert_value_for("cluster_tag_value")
         elif cloud_provider == 'gke':
             self.__insert_value_for("project")
             self.__insert_value_for("location")
